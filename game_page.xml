@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<imag>
+    <script>
+        <![CDATA[
+            var storage = $phone.localStorage();
+			var host = storage.getItem('host');
+            var userId = storage.getItem('userId');
+            var gameId = $param['gameId'];
+           	var currentNo = 0;
+            //hint('host:'+host+',gameId:'+gameId);
+            $page.onload = function(){
+           		inquiry();
+           		getScene();
+            }
+            function back(){
+                $page.close()
+            }
+           
+            //根据游戏编号查询游戏信息
+            function inquiry(){
+                var inquiry_path = host + '/game/inquiry';
+                //hint('查询游戏信息中，请求地址：'+inquiry_source);
+                $http.post(inquiry_path,{gameId:gameId},function(data){
+           			//alert(data);
+           			var inquiry_data = JSON.parse(data);
+                   	$('creatorId').text = inquiry_data.creator;
+                   	$('enemyId').text = inquiry_data.partner;
+                   	$('create_time').text = inquiry_data.game.strCreateAt;
+                })
+            }
+           	//获取场景
+           	function getScene(){
+           		currentNo = currentNo + 1;
+           		var scene_path = host + '/game/getScene';
+           		//hint('获取场景中……');
+                $http.post(scene_path,{gameId:gameId,currentNo:currentNo+''},function(data){
+           //alert(data);
+           			$('currentNo').text = JSON.parse(data).id + '';
+           			$('title').text = JSON.parse(data).title + '';
+           			$('content').text = JSON.parse(data).content + '';
+                })
+           	}
+           	//提交选项并获取对手选择信息
+           	function commit(option){
+           		var commit_path = host + '/game/commitOption';
+           		$http.post(commit_path,{gameId:gameId,phoneId:userId,option:option},function(data){
+           //alert(data);
+           			$('option_item').css('display','none');
+           			$('waiting_item').css('display','');
+           			var enemyOption = JSON.parse(data).enemyOption;
+                   	if(enemyOption==''||enemyOption==null){
+                   		loop(option);
+           			}else {
+           				//hint('进入下一轮');
+           				next();
+           			}
+           		})
+           	}
+            function loop(option){
+                $page.setTimeout(function() {
+                    commit(option);
+                }, 300);
+            }
+           	//进入下一轮
+           	function next(){
+                if(currentNo == 20){
+           			var end_path = host+"/game/endGame";
+           			$http.post(end_path,{gameId:gameId},function(data){
+           				var status = JSON.parse(data).status;
+           				if(status == 2){
+                            alert('本次游戏结束');
+                        }
+           			})
+                    $page.close();
+                }else {
+                    $('reading_item').css('display','');
+                    $('waiting_item').css('display','none');
+                    $page.setTimeout(function() {
+           				getScene();
+                        $page.setTimeout(function() {
+                            $('option_item').css('display','');
+                            $('reading_item').css('display','none');
+                        }, 1000);
+                    }, 1000);
+                }
+           	}
+           	//手动结束游戏
+            function stopGame(){
+           		var stop_path = host+"/game/stopGame";
+           		$http.post(stop_path,{gameId:gameId},function(data){
+                    var message = JSON.parse(data).message;
+                   	hint(message);
+                   	$page.close();
+           		})
+            }
+        ]]>
+    </script>
+    <page style="background:#ffffff">
+        <title style="background:#27c39f;height:64">
+            <left>
+                <icon src="title_earth.png" style="margin-left:20;height:30"/>
+                <label style="font-size:29;color:#ffffff;margin-left:8">选择</label>
+            </left>
+            <right>
+                <!--
+				<button onclick="$page.refresh()">刷新</button>
+                <button onclick="inquiry()">查询</button>
+				-->
+                <button onclick="stopGame()">结束游戏</button>
+            </right>
+        </title>
+        <header style="background:#FFFFE0"><label style="color:#FF4040">游戏只有一次，且玩且珍惜。</label></header>
+        <content>
+            <list>
+                <item><label id="title">场景标题</label></item>
+                <item><label id="content">场景</label></item>
+            </list>
+        </content>
+        <footer>
+            <list type="transparent">
+                <item style="padding:0" id="option_item">
+                    <col style="background:#66CDAA"><row style="height:42" onclick="commit('Y')"><label style="color:#ffffff;font-size:20;align:center">合作</label></row></col>
+                    <col style="background:#FF7256"><row style="height:42" onclick="commit('N')"><label style="color:#ffffff;font-size:20;align:center">不合作</label></row></col>
+                </item>
+                <item style="padding:0;display:none" id="waiting_item">
+                    <col style="background:#7d50c3"><row style="height:42"><label style="color:#ffffff;font-size:20;align:center">等待对面玩家做出选择</label></row></col>
+                </item>
+                <item style="padding:0;display:none" id="reading_item">
+                    <col style="background:#C4C4C4"><row style="height:42"><label style="color:#ffffff;font-size:20;align:center">场景加载中……</label></row></col>
+                </item>
+                <item style="padding:0"><row style="height:1px;background:#9c9c9c"></row></item>
+                <item style="col-width:100,*,100;margin:10 0">
+                    <col>
+                        <row><label style="font-weight:bold;align:right">博弈类型：</label></row>
+                        <row><label style="font-weight:bold;align:right">创建者：</label></row>
+                        <row><label style="font-weight:bold;align:right">参加者：</label></row>
+                        <row><label style="font-weight:bold;align:right">当前第：</label></row>
+                        <row><label style="font-weight:bold;align:right">状态：</label></row>
+                        <row><label style="font-weight:bold;align:right">创建日期：</label></row>
+                    </col>
+                    <col>
+                        <row><label style="color:#337ab7">标准博弈</label></row>
+                        <row><label id="creatorId" style="color:#337ab7"/></row>
+                        <row><label id="enemyId" style="color:#337ab7"/></row>
+                        <row><label id="currentNo" style="color:#337ab7"/><label> 轮</label></row>
+                        <row><label style="color:#337ab7">进行中……</label></row>
+                        <row><label id="create_time" style="color:#337ab7"/></row>
+                    </col>
+                    <col>
+                        <row><icon src="avatar_default.jpg" style="height:90;align:center" effect="round"/></row>
+                    </col>
+                </item>
+            </list>
+        </footer>
+    </page>
+</imag>
