@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="utf-8"?>
+<imag>
+    <script>
+        <![CDATA[
+            var storage = $phone.localStorage();
+            var host = 'http://120.132.13.197:8080/boyiapp';
+			storage.setItem('host',host);
+            var shortName = '';
+            var userId = '';
+            var create_list_sourse = 'http://www.imagapp.com/project/imag/imag-mh0718/data/create_test.json';
+            var my_list_sourse = 'http://www.imagapp.com/project/imag/imag-mh0718/data/my_test.json';
+            //onload方法
+            $page.onload = function(){
+            	//init_my_list();
+            	auto_login();
+            	init_index_text();
+            //init_create_list();
+            //	refresh_game_list();
+            }
+            //首页文字内容
+            function init_index_text(){
+                var data = [
+                              {
+                                "abstract": "Abstract"
+                              },
+                              {
+                                "title": "来源",
+                                "text": "囚徒困境的故事讲的是，两个嫌疑犯作案后被警察抓住，分别关在不同的屋子里接受审讯。警察知道两人有罪，但缺乏足够的证据。警察告诉每个人：如果两人都抵赖，各判刑一年；如果两人都坦白，各判八年；如果两人中一个坦白而另一个抵赖，坦白的放出去，抵赖的判十年。于是，每个囚徒都面临两种选择：坦白或抵赖。然而，不管同伙选择什么，每个囚徒的最优选择是坦白：如果同伙抵赖、自己坦白的话放出去，抵赖的话判一年，坦白比不坦白好；如果同伙坦白、自己坦白的话判八年，比起抵赖的判十年，坦白还是比抵赖的好。结果，两个嫌疑犯都选择坦白，各判刑八年。如果两人都抵赖，各判一年，显然这个结果好。但这个帕累托改进办不到，因为它不能满足人类的理性要求。囚徒困境所反映出的深刻问题是，人类的个人理性有时能导致集体的非理性——聪明的人类会因自己的聪明而作茧自缚。"
+                              },
+                              {
+                                "title": "单次多重",
+                                "text": "单次发生的囚徒困境，和多次重复的囚徒困境结果不会一样。在重复的囚徒困境中，博弈被反复地进行。因而每个参与者都有机会去“惩罚”另一个参与者前一回合的不合作行为。这时，合作可能会作为均衡的结果出现。欺骗的动机这时可能被惩罚的威胁所克服，从而可能导向一个较好的、合作的结果。作为反复接近无限的数量，纳什均衡趋向于帕累托最优。"
+                              },
+                              {
+                                "title": "主旨",
+                                "text": "囚徒们虽然彼此合作，坚不吐实，可为全体带来最佳利益（无罪开释），但在资讯不明的情况下，因为出卖同伙可为自己带来利益（缩短刑期），也因为同伙把自己招出来可为他带来利益，因此彼此出卖虽违反最佳共同利益，反而是自己最大利益所在。但实际上，执法机构不可能设立如此情境来诱使所有囚徒招供，因为囚徒们必须考虑刑期以外之因素（出卖同伙会受到报复等），而无法完全以执法者所设立之利益（刑期）作考量。"
+                              }
+                           ];
+               	var listJson = {items:[]};
+                listJson.items.push({template:0,widgets:{abstract:{text:data[0].abstract}}});
+                for(i=1;i<data.length;i++){
+                    var itemJson = {
+                        template:1,
+                        widgets:{
+                            title:{text:data[i].title},
+                            text:{text:data[i].text}
+                        }
+                    }
+                    listJson.items.push(itemJson);
+                }
+                $('index_list').update(listJson);
+            }
+            //游戏创建列表
+            function init_create_list(){
+                var data = [
+                    {
+                        "id": "1",
+                        "name": "标准博弈",
+                        "times": "20"
+                    }
+                ];
+                var listJson = {items:[]};
+                for(i=0;i<data.length;i++){
+                    var itemJson = {
+                        template:0,
+                        onclick:"create_game()",
+                        widgets:{
+                            create_id:{text:data[i].id},
+                            create_name:{text:data[i].name},
+                            create_times:{text:data[i].times},
+                            create_button:{text:'创建',onclick:"create_game()"}
+                        }
+                    }
+                    listJson.items.push(itemJson);
+                }
+                $('create_list').update(listJson);
+            }
+            //获取“加入游戏”列表
+            function refresh_game_list(){
+                $('join_list').clear();
+                init_game_list();
+            }
+            function init_game_list(){
+                var game_list_source = host + '/game/gameList';
+                //var game_list_source = 'http://www.imagapp.com/project/imag/imag-mh0718/data/test_gameList.json';
+                $http.get(game_list_source,function(data){
+            		var data = JSON.parse(data);
+                    var listJson = {items:[]};
+                    for(i=0;i<data.length;i++){
+                        //var gameid = data[i].gameId;
+                        if(userId != data[i].phoneId){
+                            var itemJson = {
+                                template:0,
+                                onclick:"join_game("+data[i].gameId+")",
+                                widgets:{
+                                    game_id:{text:data[i].gameId},
+                                    creator:{text:data[i].phoneId},
+                                    times:{text:data[i].times},
+                                    create_button:{text:'加入',onclick:"join_game("+data[i].gameid+")"}
+                                }
+                            }
+                            listJson.items.push(itemJson);
+                        }
+					}
+					$('join_list').update(listJson)
+                })
+        	}
+        	//查询用户参加过和创建过的游戏
+            function init_my_list(){
+                //var myList_path = host + 'http://www.imagapp.com/project/imag/imag-mh0718/data/my_test.json';
+                var myList_path = host + '/game/getGameListByPhoneId';
+                $http.get(myList_path,{phoneId:userId},function(data){
+            		var create = JSON.parse(data).create;
+            		var join = JSON.parse(data).join;
+                    var listJson = {items:[]};
+                    if(create == 'no'){
+                        listJson.items.push({template:1,widgets:{gameType:{text:'没有创建过游戏，建一个？',onclick:"$('slidingmenu').open()"}}});
+                    }else {
+                        listJson.items.push({template:1,widgets:{gameType:{text:'我创建的游戏'}}});
+                        for(i=0;i<create.length;i++){
+                            var enemyId = create[i].enemyId;
+                            if(enemyId == '00000000000'){enemyId = '没有对手……'};
+                            var itemJson = {
+                                template:0,
+                                onclick:"review_test()",
+                                widgets:{
+                                    gameId:{text:create[i].gameId},
+                                    enemyId:{text:enemyId},
+                                    times:{text:create[i].times},
+                                    currentNo:{text:create[i].currentNo},
+                                    createTime:{text:create[i].strCreateAt}
+                                }
+                            }
+                            listJson.items.push(itemJson);
+                        }
+                    }
+                    if(join == 'no'){
+                        listJson.items.push({template:1,widgets:{gameType:{text:'没有加入过游戏，快试试吧',onclick:"$('slidingmenu').open()"}}});
+                    }else {
+                    	listJson.items.push({template:1,widgets:{gameType:{text:'我加入的游戏：'}}});
+                        for(i=0;i<join.length;i++){
+                            var itemJson = {
+                                template:0,
+                                onclick:"review_test()",
+                                widgets:{
+                                    gameId:{text:join[i].gameId},
+                                    enemyId:{text:join[i].phoneId},
+                                    times:{text:join[i].times},
+                                    currentNo:{text:join[i].currentNo},
+                                    createTime:{text:join[i].strCreateAt}
+                                }
+                            }
+                            listJson.items.push(itemJson);
+                        }
+                    }
+                    $('my_list').update(listJson);
+                })
+            }
+        	//返回所有游戏结果
+            function init_result(){
+                if(userId == '' || userId == null){
+                    hint('不登陆的话看不了这些数据的~');
+                    login('login');
+                }else {
+                    var result_path = host + '/message/showAllGameMessage';
+                    //var result_path = 'http://www.imagapp.com/project/imag/imag-mh0718/data/result.json';
+                    $http.post(result_path,function(data){
+                        //alert(data);
+                        var data = JSON.parse(data);
+                        var listJson = {items:[]};
+                        for(i=0;i<data.length;i++){
+                            var itemJson = {
+                                template:0,
+                                widgets:{
+                                    gameId:{text:data[i].gameId},
+                                    creator:{text:data[i].phoneId},
+                                    enemy:{text:data[i].enemyId},
+                                    //create_times:{text:data[i].enemyId},
+                                    aCoopNum:{text:data[i].aCoopNum},
+                                    bCoopNum:{text:data[i].bCoopNum},
+                                    bothCoop:{text:data[i].bothCoop},
+                                    bothEnemy:{text:data[i].bothEnemy}
+                                }
+                            }
+                            listJson.items.push(itemJson);
+                        }
+                        $('ranking_list').update(listJson);
+                    })
+                }
+            }
+        	//创建游戏
+            function create_game(){
+                var create_source = host + '/game/newGame';
+                if(userId == '' || userId == null){
+                    hint('需要登陆才能加入游戏:D');
+                    login('login');
+                }else {
+                    $http.post(create_source,{phoneId:userId},function(data){
+                        //alert(data);
+                        var gameId = JSON.parse(data).status;
+                        hint('游戏编号：'+gameId);
+                        $page.open('waiting_page.xml?gameId='+gameId);
+                    })
+                	//$page.open('static_page/waiting_page.xml');//temp
+                }
+            }
+        	//加入游戏
+			function join_game(gameId){
+            	var join_source = host + '/game/joinGame';
+                var gameid = gameId+'';
+                if(userId == '' || userId == null){
+                    hint('需要登陆才能创建游戏:p');
+                    login('login');
+                }else {
+                    $http.post(join_source,{gameId:gameid,enemyId:userId},function(data){
+                        //alert(data);
+                        var status = JSON.parse(data).game.status;
+                        if(status == 1){
+                            $page.open('game_page.xml?gameId='+gameId);
+                        }
+                    })
+                    //$page.open('static_page/waiting_page.xml');//temp
+                    //hint('加入游戏：'+join_source+'，gameId:'+gameId+'，userId:'+userId);
+                }
+			}
+            //登录、注册、修改密码
+            function login(status){
+                $page.open('login.xml?status='+status);
+            }
+        	//注销
+            function login_out(){
+                //hint('注销中……');
+                var loginOut_path = host + '/register/loginOut';
+                $http.get(loginOut_path,function(data){
+                    //alert(data);
+                    var phoneid = JSON.parse(data).phoneId;
+                    hint('用户 '+phoneid+' 注销成功');
+                    storage.setItem('userId','');
+                    userId = '';
+                    login_out_success();
+                })
+            }
+            //注销登录后切换信息显示内容
+            function login_out_success(){
+                $('user_list').css('display','none');
+                $('new_user_list').css('display','');
+            }
+        	//登录成功后切换登录信息显示内容
+            function login_success(){
+                shortName = storage.getItem('shortName');
+                $('userId').text = '你好 ' + shortName;
+                $('new_user_list').css('display','none');
+                $('user_list').css('display','');
+            }
+        	//自动登录（判断登录状态）
+            function auto_login(){
+                var uid = storage.getItem('userId');
+            	if(uid==""||uid==null){
+                    hint('最好登陆一下（按钮在侧滑菜单中）:D');
+                }else {
+                    hint('当前用户id为：'+uid);
+                    userId = uid;
+                    login_success();
+                }
+            }
+            //content切换方法
+            function showContent(index){
+                $('slidingmenu').close();
+                $('contents').showContent(index);
+                switch(index){
+                    case 0:
+                        $('title_label').text = '首页';
+                        break;
+                    case 1:
+                        init_create_list();
+                        $('title_label').text = '创建比赛';
+                        break;
+                    case 2:
+                        $('title_label').text = '加入比赛';
+                        init_game_list();
+                        break;
+                    case 3:
+                        $('title_label').text = '我的比赛';
+                        init_my_list();
+                        break;
+                    case 4:
+                        $('title_label').text = '数据查看';
+                        init_result();
+                        break;
+                }
+            }
+        //----------------------------------------------------------------------------------------------------------------------------
+			function review_test(){
+				hint('查看页面');
+                $page.open('review_page.xml');
+			}
+        ]]>
+    </script>
+    <page>
+        <pathmenu position="bottomright" icon="search_menu.png" onclick="$page.open('search.xml')"/>
+        <slidingmenu id="slidingmenu">
+            <item>
+                <content style="background:#ffffff">
+                    <list type="transparent" id="new_user_list">
+                        <item style="padding:20 0 0;background:#27c39f">
+                            <row><icon src="avatar_default.jpg" style="height:91;align:center" effect="round"/></row>
+                            <row style="height:10"></row>
+                            <row><label style="color:#ffffff;font-size:20;align:center">Hello 游客</label></row>
+                        </item>
+                        <item style="padding:8 0 14;height:37;background:#27c39f" id="login_item()">
+                            <row>
+                                <label style="color:#ffffff;font-size:18;align:center" onclick="login('login')">登录</label>
+                                <label style="color:#ffffff;font-size:18;align:center;margin:0 12">|</label>
+                                <label style="color:#ffffff;font-size:18;align:center" onclick="login('register')">注册</label>
+                            </row>
+                        </item>
+                    </list>
+                    <list type="transparent" id="user_list" style="display:none">
+                        <item style="padding:20 0 0;background:#27c39f">
+                            <row><icon src="avatar_default.jpg" style="height:91;align:center" effect="round"/></row>
+                            <row style="height:10"></row>
+                            <row><label id="userId" style="color:#ffffff;font-size:20;align:center"/></row>
+                        </item>
+                        <item style="padding:8 0 14;height:37;background:#27c39f" id="info_item()">
+                            <row>
+                                <label style="color:#ffffff;font-size:18;align:center" onclick="login('modifyPassword')">修改密码</label>
+                                <label style="color:#ffffff;font-size:18;align:center;margin:0 12">|</label>
+                                <label style="color:#ffffff;font-size:18;align:center" onclick="login('changeName')">修改昵称</label>
+                                <label style="color:#ffffff;font-size:18;align:center;margin:0 12">|</label>
+                                <label style="color:#ffffff;font-size:18;align:center" onclick="login_out()">注销</label>
+                            </row>
+                        </item>
+                    </list>
+                    <list type="transparent" style="margin:0 30;background:#ffffff">
+                        <item style="padding:19 0" onclick="showContent(0)"><row><label style="font-size:16">简介</label></row></item>
+                        <item style="padding:19 0" onclick="showContent(1)"><row><label style="font-size:16">创建比赛</label></row></item>
+                        <item style="padding:19 0" onclick="showContent(2)"><row><label style="font-size:16">加入比赛</label></row></item>
+                        <item style="padding:19 0" onclick="showContent(3)"><row><label style="font-size:16">我的比赛</label></row></item>
+                        <item style="padding:19 0" onclick="showContent(4)"><row><label style="font-size:16">数据查看</label></row></item>
+                    </list>
+                </content>
+            </item>
+            <item>
+                <title style="background:#7d50c3;height:64">
+                    <left>
+                        <icon src="title_earth.png" style="margin-left:20;height:30" onclick="$('slidingmenu').open()"/>
+                        <label style="font-size:29;color:#ffffff;margin-left:8" id="title_label">囚徒困境</label>
+                    </left>
+                    <right><button onclick="$page.refresh()">重新载入应用</button></right>
+                </title>
+                <contents id="contents">
+                    <content style="background:#ffffff">
+                        <list type="transparent" reuse="true" id="index_list">
+                            <item><row><label reusekey="abstract" style="color:#444444;font-size:30;align:center;padding:20 0"/></row></item>
+                            <item>
+                                <row><label reusekey="title" style="color:#444444;font-size:24;font-weight:bold"/></row>
+                                <row><label reusekey="text" style="color:#444444;padding:16"/></row>
+                            </item>
+                        </list>
+                    </content>
+                    <!--创建比赛-->
+                    <content style="background:#ffffff" draggable="true" ondragdown="init_create_list();this.hideTop();">
+                        <list>
+                            <item style="padding:13 6;col-width:48,*,*,60;background:#8968CD">
+                                <col><row><label style="color:#ffffff;font-size:16">Id</label></row></col>
+                                <col><row><label style="color:#ffffff;font-size:16">博弈类型</label></row></col>
+                                <col><row><label style="color:#ffffff;font-size:16">游戏次数</label></row></col>
+                                <col></col>
+                            </item>
+                        </list>
+                        <list reuse="true" id="create_list">
+                            <item style="padding:6 4;col-width:48,*,*,60">
+                                <col><row><label style="color:#337ab7;font-size:16" reusekey="create_id"/></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16" reusekey="create_name"/></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16" reusekey="create_times"/></row></col>
+                                <col><row><label style="color:#ffffff;font-size:16;align:center;background:#71C671;padding:4 8;corner-radius:12" reusekey="create_button"/></row></col>
+                            </item>
+                        </list>
+                    </content>
+                    <!--加入比赛-->
+                    <content style="background:#ffffff" draggable="true" ondragdown="refresh_game_list();this.hideTop();">
+                        <list>
+                            <item style="padding:13 6;col-width:60,*,100,60;background:#ddf1fa">
+                                <col><row><label style="color:#337ab7;font-size:16">游戏Id</label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16">创建者id</label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center">游戏次数</label></row></col>
+                                <col></col>
+                            </item>
+                        </list>
+                        <list reuse="true" id="join_list">
+                            <item style="padding:6 4;col-width:60,*,100,60">
+                                <col><row><label reusekey="game_id" style="color:#337ab7;font-size:16;align:center"/></row></col>
+                                <col><row><label reusekey="creator" style="color:#337ab7;font-size:16"/></row></col>
+                                <col><row><label reusekey="times" style="color:#337ab7;font-size:16;align:center"/></row></col>
+                                <col><row><label reusekey="create_button" style="color:#ffffff;font-size:16;align:center;background:#20B2AA;padding:4 8;corner-radius:12"/></row></col>
+                            </item>
+                        </list>
+                    </content>
+                    <!--我的比赛-->
+                    <content style="background:#ffffff" draggable="true" ondragdown="init_my_list();this.hideTop();">
+                        <list>
+                            <item style="padding:13 6;col-width:40,*,50,40,*;background:#ddf1fa">
+                                <col><row><label style="color:#337ab7;font-size:16;align:center"><![CDATA[游戏<br/>ID]]></label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center">对手ID</label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center">回合数</label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center"><![CDATA[游戏<br/>进度]]></label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center">创建日期</label></row></col>
+                            </item>
+                        </list>
+                        <list reuse="true" id="my_list">
+                            <item style="padding:6 4;col-width:40,*,50,40,*">
+                                <col><row><label style="color:#337ab7;font-size:16;align:center" reusekey="gameId"/></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center" reusekey="enemyId"/></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center" reusekey="times"/></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center" reusekey="currentNo"/></row></col>
+                                <col><row><label style="color:#7d50c3;font-size:16;align:center" reusekey="createTime"/></row></col>
+                            </item>
+                            <item style="padding:6 4;background:#FDF5E6">
+                                <col><row><label style="color:#F08080;font-size:16" reusekey="gameType"/></row></col>
+                            </item>
+                        </list>
+                    </content>
+                    <!--数据查看-->
+                    <content style="background:#ffffff" draggable="true" ondragdown="init_result();this.hideTop();">
+                        <list>
+                            <item style="padding:13 6;background:#ddf1fa;col-width:40,170,*,*,*,*">
+                                <col><row><label style="color:#337ab7;font-size:16;align:center"><![CDATA[游戏<br/>ID]]></label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center">参与者（A、B）</label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center"><![CDATA[A<br/>合作]]></label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center"><![CDATA[B<br/>合作]]></label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center"><![CDATA[相互<br/>合作]]></label></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center"><![CDATA[相互<br/>背叛]]></label></row></col>
+                            </item>
+                        </list>
+                        <list reuse="true" id="ranking_list">
+                            <item style="padding:6 4;col-width:40,60,110,*,*,*,*">
+                                <col><row><label style="color:#337ab7;font-size:16;align:center" reusekey="gameId"/></row></col>
+                                <col>
+                                    <row><label style="color:#337ab7;font-size:16;align:center">创建者:</label></row>
+                                    <row><label style="color:#337ab7;font-size:16;align:center">参加者:</label></row></col>
+                                <col>
+                                    <row><label style="color:#337ab7;font-size:16;align:center" reusekey="creator"/></row>
+                                    <row><label style="color:#337ab7;font-size:16;align:center" reusekey="enemy"/></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center" reusekey="aCoopNum"/></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center" reusekey="bCoopNum"/></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center" reusekey="bothCoop"/></row></col>
+                                <col><row><label style="color:#337ab7;font-size:16;align:center" reusekey="bothEnemy"/></row></col>
+                            </item>
+                        </list>
+                    </content>
+                </contents>
+            </item>
+        </slidingmenu>
+    </page>
+</imag>
