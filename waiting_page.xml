@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<imag>
+    <script>
+        <![CDATA[
+            var storage = $phone.localStorage();
+			var host = storage.getItem('host');
+            var gameId = $param['gameId'];
+           	var game_status = 0;
+           	var time = 0;
+               
+            $page.onload = function(){
+                var gameId = $param['gameId'];
+                $('gameId').text = gameId;
+                inquiry_status();
+            }
+            function back(){
+                $page.close()
+            }
+        	//等待时间
+            function waiting(){
+                $('title_label').text = '已等待 '+ time + ' 秒';
+            }
+           	//定时查询游戏状态
+           	function inquiry_status(){
+                inquiry();
+                if (game_status == 0){
+                    loop();
+                }else {
+                    $page.open('game_page.xml?gameId='+gameId,{target:'_self'});
+                }
+           	}
+            function loop(){
+                $page.setTimeout(function() {
+                    inquiry_status();
+                    time++;
+                }, 1000);
+            }
+           	//根据游戏编号查询游戏信息
+            function inquiry(){
+                var inquiry_path = host + '/game/inquiry';
+                waiting();
+                $http.post(inquiry_path,{gameId:gameId},function(data){
+                    //alert(data);
+           			var inquiry_data = JSON.parse(data).game;
+                    game_status = inquiry_data.status;
+                   	$('creatorId').text = inquiry_data.phoneId;
+                   	$('create_time').text = inquiry_data.strCreateAt;
+                })
+            }
+        ]]>
+    </script>
+    <page style="background:#ffffff">
+        <title style="background:#27c39f;height:64">
+            <left>
+                <icon src="title_earth.png" style="margin-left:20;height:30"/>
+                <label id="title_label" style="font-size:29;color:#ffffff;margin-left:8">匹配中……</label>
+            </left>
+        </title>
+        <header>
+            <list>
+                <item style="col-width:100,*">
+                    <col>
+                        <row><label style="font-weight:bold;align:right">博弈编号：</label></row>
+                        <row><label style="font-weight:bold;align:right">创建者：</label></row>
+                        <row><label style="font-weight:bold;align:right">状态：</label></row>
+                        <row><label style="font-weight:bold;align:right">创建日期：</label></row>
+                    </col>
+                    <col>
+                        <row><label id="gameId" style="color:#337ab7"/></row>
+                        <row><label id="creatorId" style="color:#337ab7"/></row>
+                        <row><label style="color:#337ab7">Waiting</label></row>
+                        <row><label id="create_time" style="color:#337ab7"/></row>
+                    </col>
+                </item>
+            </list>
+        </header>
+        <content>
+            <list type="transparent">
+                <item style="padding:0;margin-top:122">
+                    <row><icon src="avatar_default.jpg" style="align:center;height:90" effect="round"/></row>
+                </item>
+            </list>
+        </content>
+        <footer>
+            <list type="transparent">
+                <item>
+                    <row><icon src="avatar1.jpg" style="align:center;height:90" effect="round"/></row>
+                </item>
+                <item style="margin:40;padding:0;background:#FF4040" onclick="back()">
+                    <col><row style="height:42"><label style="align:center;font-size:17;color:white;">Exit</label></row></col>
+                </item>
+            </list>
+        </footer>
+    </page>
+</imag>
