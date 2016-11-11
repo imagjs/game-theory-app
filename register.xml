@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<imag>
+    <script>
+        <![CDATA[
+            var host = 'http://192.168.1.102:8081';
+            function register(){
+                var phoneId = $('register_phoneId').value;
+                var passwd = $('register_passwd').value;
+                var shortName = $('register_shortName').value;
+                var register_source = host + '/register/phoneRegister';
+            	$http.post(register_source,{phoneId:phoneId,passwd:passwd,shortName:shortName},function(data){
+                    alert(data);
+            //$('return').text = data;
+                })
+            }
+            //登录
+            function login(){
+            	var phoneId = $('phoneId').value;
+            	var password = $('password').value;
+            	var login_source = host + '/register/login';
+                $http.post(login_source,{phoneId:phoneId,password:password},function(data){
+                    var status = JSON.parse(data);
+                    $('login_return').text = data;
+                    if(status=='1'){
+                        hint('登录失败');
+                    }
+                    if(status=='0'){
+                        hint('登录成功');
+                    }
+                })
+            }
+            //修改密码
+            function modifyPassword(){
+            	var oldPassword = $('oldPassword').value;
+            	var newPassword = $('newPassword').value;
+            	var confirm_newPassword = $('confirm_newPasswoird').value;
+            //check_string(oldPassword,'老密码');
+                if(newPassword == confirm_newPassword){
+            		alert(oldPassword+'前面老密码，后面新密码'+newPassword);
+                    $http.post('http://192.168.1.102:8081/register/modifyPassword',{oldPassword:oldPassword,newPassword:newPassword},function(data){
+                        //alert(data);
+                        $('modifyPassword_return').text = data;
+                    })
+                }else {
+            		hint('新密码和确认密码不一致，请重新输入');
+                }
+            }
+            //检验是否为空
+            function check_string(str,str2){
+                if(str==''||str==null||str.length<1){
+                    hint("不能输入空的"+str2);
+                    return false;
+                }else{
+            		return true;
+                }
+            }
+        ]]>
+    </script>
+    <page>
+        <title style="background:#7d50c3;height:64">
+            <left>
+                <icon src="title_earth.png" style="margin-left:20;height:30" onclick="$page.close(0)"/>
+                <label style="font-size:29;color:#ffffff;margin-left:8" id="title_label">登录</label>
+            </left>
+        </title>
+        <content style="background:#ffffff">
+            <list id="register_list" type="transparent">
+                <item>
+                    <col>
+                        <input id="register_phoneId" placeholder="请输入手机号"/>
+                    </col>
+                </item>
+                <item>
+                    <col>
+                        <input id="register_shortName" placeholder="请输入昵称"/>
+                    </col>
+                </item>
+                <item>
+                    <col>
+                        <input id="register_passwd" placeholder="请输入密码"/>
+                    </col>
+                </item>
+                <item>
+                    <row><button onclick="register()" style="background:#7d50c3;align:center;corner-radius:8;color:#ffffff;font-size:18;width:90%">注册</button></row></item>
+            </list>
+            <list id="login_list" type="transparent">
+                <item>
+                    <col>
+                        <input id="login_phoneId" placeholder="请输入手机号"/>
+                    </col>
+                </item>
+                <item>
+                    <col>
+                        <input id="login_passwd" placeholder="请输入密码"/>
+                    </col>
+                </item>
+                <item>
+                    <row><button onclick="login()" style="background:#7d50c3;align:center;corner-radius:8;color:#ffffff;font-size:18;width:90%">登录</button></row></item>
+            </list>
+            <list id="change_psw_list" type="transparent">
+                <item>
+                    <col>
+                        <input id="oldPassword" placeholder="请输入原始密码"/>
+                    </col>
+                </item>
+                <item>
+                    <col>
+                        <input id="newPasswd" placeholder="请输入新密码"/>
+                    </col>
+                </item>
+                <item>
+                    <col>
+                        <input id="confirm_newPasswd" placeholder="确认新密码"/>
+                    </col>
+                </item>
+                <item>
+                    <row><button onclick="modifyPassword()" style="background:#7d50c3;align:center;corner-radius:8;color:#ffffff;font-size:18;width:90%">确认</button></row></item>
+            </list>
+        </content>
+    </page>
+</imag>
